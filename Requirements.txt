@@ -1,0 +1,5 @@
+boto3
+tiktoken
+pydantic
+python-dotenv
+requests
