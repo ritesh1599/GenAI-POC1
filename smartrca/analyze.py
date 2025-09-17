@@ -6,3 +6,4 @@ def analyze_text_log(raw: str) -> dict:
     excerpt = head_tail(cleaned, 64, 128)
     result = ask_llm(excerpt)
     return result
+
