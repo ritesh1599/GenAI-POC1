@@ -1,48 +1,65 @@
+import os
 import json
-from .config import SETTINGS
+import boto3
+import openai
+import google.generativeai as genai
+from smartrca.config import SETTINGS
 
-def ask_llm(log_excerpt: str) -> dict:
-    if SETTINGS.provider == "openai":
-        import openai
-        openai.api_key = SETTINGS.openai_api_key
-        msg = [
-            {"role":"system","content": "You are an expert AWS Glue/Spark reliability engineer."},
-            {"role":"user","content": f"""Analyze logs and output strict JSON with keys:
-issue_type, confidence, explanation, fixes, references.
-Logs:
-```{log_excerpt}```"""}
-        ]
+# --- Configure OpenAI ---
+if SETTINGS.provider.lower() == "openai":
+    openai.api_key = SETTINGS.openai_api_key
+
+# --- Configure Gemini ---
+if SETTINGS.provider.lower() == "gemini":
+    genai.configure(api_key=os.getenv("GEMINI_API_KEY"))
+
+# --- Configure Bedrock ---
+if SETTINGS.provider.lower() == "bedrock":
+    bedrock_client = boto3.client("bedrock-runtime", region_name=SETTINGS.aws_region)
+
+
+def ask_llm(prompt: str):
+    provider = SETTINGS.provider.lower()
+
+    if provider == "openai":
         resp = openai.chat.completions.create(
             model=SETTINGS.model,
-            messages=msg,
-            temperature=0.2,
+            messages=[{"role": "user", "content": prompt}],
             max_tokens=SETTINGS.max_tokens,
         )
         text = resp.choices[0].message.content
-    else:
-        # Bedrock example with Claude (pseudo-minimal)
-        import boto3, json as pyjson
-        bedrock = boto3.client("bedrock-runtime", region_name=SETTINGS.aws_region)
-        body = {
-            "messages": [
-              {"role": "system", "content": [{"text": "You are an expert AWS Glue/Spark reliability engineer."}]},
-              {"role": "user", "content": [{"text": f"Analyze logs and output strict JSON with keys issue_type, confidence, explanation, fixes, references.\nLogs:\n```{log_excerpt}```"}]}
-            ],
-            "max_tokens": SETTINGS.max_tokens,
-            "temperature": 0.2
-        }
-        resp = bedrock.invoke_model(
-            modelId="anthropic.claude-3-haiku-20240307-v1:0",
-            body=json.dumps(body),
+
+    elif provider == "gemini":
+        model = genai.GenerativeModel(SETTINGS.model)
+        resp = model.generate_content(prompt)
+        text = resp.text
+
+    elif provider == "bedrock":
+        resp = bedrock_client.invoke_model(
+            modelId=SETTINGS.model,
+            body=json.dumps({
+                "inputText": prompt,
+                "textGenerationConfig": {"maxTokenCount": SETTINGS.max_tokens}
+            }),
             contentType="application/json",
             accept="application/json"
         )
-        text = json.loads(resp["body"].read())["output"]["message"]["content"][0]["text"]
+        body = json.loads(resp["body"].read())
+        text = body.get("results", [{}])[0].get("outputText", "")
 
-    # try to locate JSON in response
+    else:
+        raise ValueError(f"Unsupported LLM provider: {SETTINGS.provider}")
+
+    # --- JSON extraction fallback ---
     try:
         start = text.index("{")
         end = text.rindex("}") + 1
         return json.loads(text[start:end])
     except Exception:
-        return {"issue_type":"unknown","confidence":0.2,"explanation":text,"fixes":[],"references":[]}
+        return {
+            "issue_type": "unknown",
+            "confidence": 0.2,
+            "explanation": text,
+            "fixes": [],
+            "references": []
+        }
