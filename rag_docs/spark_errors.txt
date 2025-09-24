@@ -1,0 +1,3 @@
+Error: ClassNotFoundException
+Cause: Spark cannot find the specified class in the classpath.
+Fix: Ensure the JAR file is included in the Glue job dependencies.

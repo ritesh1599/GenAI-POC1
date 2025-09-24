@@ -1,9 +1,9 @@
-import argparse, os, json, sys
-from smartrca.config import SETTINGS
+import argparse, json
 from smartrca.s3_io import read_s3_text
 from smartrca.analyze import analyze_text_log
 
 def read_input(path: str) -> str:
+    """Read from local path or s3://bucket/key"""
     if path.startswith("s3://"):
         return read_s3_text(path)
     else:
@@ -11,12 +11,19 @@ def read_input(path: str) -> str:
             return f.read()
 
 def main():
-    ap = argparse.ArgumentParser(description="SmartRCA: analyze Glue/Spark logs with LLM")
-    ap.add_argument("--path", required=True, help="local path or s3://bucket/key")
-    args = ap.parse_args()
+    parser = argparse.ArgumentParser(
+        description="SmartRCA with RAG: Analyze Glue/Spark logs using LLM + Knowledge Base"
+    )
+    parser.add_argument("--path", required=True, help="local path or s3://bucket/key")
+    args = parser.parse_args()
 
+    # Step 1: Read log
     text = read_input(args.path)
+
+    # Step 2: Analyze log (Phase 2: RAG-enhanced)
     result = analyze_text_log(text)
+
+    # Step 3: Print structured output
     print(json.dumps(result, indent=2, ensure_ascii=False))
 
 if __name__ == "__main__":
