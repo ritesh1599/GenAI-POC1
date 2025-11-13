@@ -4,7 +4,8 @@ import numpy as np
 import pickle
 from sentence_transformers import SentenceTransformer
 from langchain.text_splitter import RecursiveCharacterTextSplitter
-from llm_client import ask_llm
+from smartrca.llm_client import ask_llm
+from smartrca.prompts import build_prompt  # <-- Import prompts module
 
 
 # -------------------------
@@ -108,12 +109,10 @@ def analyze_text_log(text):
             top_chunks = retrieve_chunks(lc, kb_index, kb_chunks)
             context_chunks.extend(top_chunks)
 
-    # Step E: Build final prompt
-    final_context = (
-        "Relevant Knowledge:\n" + "\n".join(context_chunks) + "\n\nLog:\n" + text
-        if context_chunks
-        else text
-    )
+    # Step E: Build final prompt using prompts.py
+    final_prompt = build_prompt(log=text, context=context_chunks)
 
     # Step F: Call LLM
-    return ask_llm(final_context)
+    return ask_llm(final_prompt)
+
+

@@ -1,3 +1,53 @@
-ExecutorLostFailure (executor 3 exited) Reason: Container killed by YARN for exceeding physical memory limits.
-Driver stacktrace: org.apache.spark.SparkException: Job aborted due to stage failure
-Caused by: java.lang.OutOfMemoryError: Java heap space
+2024-01-15 10:23:45,123 INFO  SparkContext:54 - Running Spark version 3.3.1
+2024-01-15 10:23:45,456 INFO  SparkContext:54 - Submitted application: my_etl_job
+2024-01-15 10:23:45,789 INFO  ResourceUtils:54 - ==============================================================
+2024-01-15 10:23:45,790 INFO  ResourceUtils:54 - Resources for spark.driver:
+
+2024-01-15 10:23:46,112 INFO  ResourceUtils:54 - ==============================================================
+2024-01-15 10:23:46,113 INFO  SparkContext:54 - Spark context configured with driver memory: 4g
+2024-01-15 10:23:47,891 INFO  DAGScheduler:54 - Job 0 started: collect at MyApp.scala:156
+
+2024-01-15 10:24:15,234 INFO  Executor:54 - Finished task 0.0 in stage 0.0 (TID 0). 1234 bytes result sent to driver
+2024-01-15 10:24:15,567 INFO  Executor:54 - Finished task 1.0 in stage 0.0 (TID 1). 2345 bytes result sent to driver
+2024-01-15 10:24:16,128 WARN  MemoryStore:54 - Not enough space to cache rdd_0_1 in memory!
+2024-01-15 10:24:16,891 INFO  Executor:54 - Finished task 2.0 in stage 0.0 (TID 2). 3456 bytes result sent to driver
+
+2024-01-15 10:25:22,456 ERROR Executor:91 - Exception in task 15.0 in stage 0.0 (TID 15)
+java.lang.OutOfMemoryError: Java heap space
+    at java.util.Arrays.copyOf(Arrays.java:3236)
+    at java.io.ByteArrayOutputStream.grow(ByteArrayOutputStream.java:118)
+    at java.io.ByteArrayOutputStream.ensureCapacity(ByteArrayOutputStream.java:93)
+    at java.io.ByteArrayOutputStream.write(ByteArrayOutputStream.java:153)
+    at org.apache.spark.util.ByteBufferOutputStream.write(ByteBufferOutputStream.scala:41)
+
+2024-01-15 10:25:23,112 WARN  TaskSetManager:66 - Lost task 15.0 in stage 0.0 (TID 15, executor driver): java.lang.OutOfMemoryError: Java heap space
+
+2024-01-15 10:25:45,789 ERROR MemoryManager:91 - Out of memory! Available: 1024.0 MB, request: 1456.3 MB
+2024-01-15 10:25:46,234 ERROR SparkUncaughtExceptionHandler:91 - Uncaught exception in thread Thread[driver-heartbeater,5,main]
+java.lang.OutOfMemoryError: GC overhead limit exceeded
+    at java.lang.String.substring(String.java:1963)
+    at org.apache.spark.scheduler.TaskResult.get(TaskResult.scala:67)
+    at org.apache.spark.scheduler.DirectTaskResult.value(TaskResult.scala:88)
+
+2024-01-15 10:25:47,891 ERROR Driver:91 - Driver stacktrace:
+org.apache.spark.SparkException: Job aborted due to stage failure: Task 15 in stage 0.0 failed 4 times, most recent failure: Lost task 15.3 in stage 0.0 (TID 89): ExecutorLostFailure (executor driver exited caused by one of the running tasks) Reason: Driver heap space out of memory
+
+2024-01-15 10:25:48,123 ERROR ApplicationMaster:91 - User class threw exception: org.apache.spark.SparkException: Job aborted due to stage failure: Task 15 in stage 0.0 failed 4 times, most recent failure: Lost task 15.3 in stage 0.0 (TID 89): ExecutorLostFailure (executor driver exited caused by one of the running tasks) Reason: Driver heap space out of memory
+org.apache.spark.SparkException: Job aborted due to stage failure: Task 15 in stage 0.0 failed 4 times, most recent failure: Lost task 15.3 in stage 0.0 (TID 89): ExecutorLostFailure (executor driver exited caused by one of the running tasks) Reason: Driver heap space out of memory
+    at org.apache.spark.scheduler.DAGScheduler.failJobAndIndependentStages(DAGScheduler.scala:2678)
+    at org.apache.spark.scheduler.DAGScheduler.$anonfun$abortStage$2(DAGScheduler.scala:2614)
+    at org.apache.spark.scheduler.DAGScheduler.$anonfun$abortStage$2$adapted(DAGScheduler.scala:2609)
+
+2024-01-15 10:25:48,456 INFO  SparkContext:54 - Invoking stop() from shutdown hook
+2024-01-15 10:25:48,789 INFO  SparkUI:54 - Stopped Spark web UI at http://10.0.1.234:4040
+2024-01-15 10:25:49,123 INFO  MapOutputTrackerMasterEndpoint:54 - MapOutputTrackerMasterEndpoint stopped!
+2024-01-15 10:25:49,456 INFO  MemoryStore:54 - MemoryStore cleared
+2024-01-15 10:25:49,789 INFO  BlockManager:54 - BlockManager stopped
+2024-01-15 10:25:50,112 INFO  BlockManagerMaster:54 - BlockManagerMaster stopped
+2024-01-15 10:25:50,445 INFO  OutputCommitCoordinator$OutputCommitCoordinatorEndpoint:54 - OutputCommitCoordinator stopped!
+2024-01-15 10:25:50,778 INFO  SparkContext:54 - SparkContext stopped
+2024-01-15 10:25:51,112 INFO  ShutdownHookManager:54 - Shutdown hook called
+2024-01-15 10:25:51,445 INFO  ShutdownHookManager:54 - Deleting directory /tmp/spark-12345678-90ab-cdef-1234-567890abcdef
+2024-01-15 10:25:51,778 INFO  ShutdownHookManager:54 - Deleting directory /tmp/spark-12345678-90ab-cdef-1234-567890abcdef/pyspark-12345678
+
+2024-01-15 10:25:52,111 ERROR YarnClusterApplication:91 - Final app status: FAILED, exitCode: 15, (reason: Driver heap space out of memory)
