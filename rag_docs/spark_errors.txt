@@ -1,3 +1,73 @@
-Error: ClassNotFoundException
-Cause: Spark cannot find the specified class in the classpath.
-Fix: Ensure the JAR file is included in the Glue job dependencies.
+Glue Job Failures: Driver OutOfMemory Issues - Root Causes and Fixes
+
+ROOT CAUSES:
+
+1. Data Collection to Driver
+   - Using .collect() on large datasets brings all data to driver memory
+   - Operations like .take(), .show() with large row counts
+   - Driver becomes bottleneck when handling excessive data
+
+2. Broadcast Join Limitations
+   - Broadcasting very large DataFrames (>8GB default limit)
+   - Driver must collect, serialize, and distribute broadcast data
+   - Small driver memory cannot handle large broadcast tables
+
+3. Inefficient Data Skew Handling
+   - Heavy key skew causes uneven data distribution
+   - Operations like groupBy(), window() on skewed keys
+   - Single executor/driver handles disproportionate data load
+
+4. Excessive Driver-Side Operations
+   - Complex UDFs with large object creation
+   - Driver-side data processing instead of executor-side
+   - Large accumulator variables accumulating data
+
+5. Memory-Intensive Transformations
+   - Cartesian products and expensive joins
+   - Operations requiring data shuffling to driver
+   - Caching too many large datasets simultaneously
+
+PROBABLE FIXES:
+
+1. Memory Configuration
+   - Increase driver memory: --driver-memory 20g
+   - Enable memory overhead: --conf spark.driver.memoryOverhead=4g
+   - Adjust executor memory accordingly
+
+2. Avoid Data Collection
+   - Use distributed writes instead of collect(): df.write.parquet()
+   - Sample data with limit(): df.limit(1000).collect()
+   - Process data in chunks for large datasets
+
+3. Optimize Broadcast Joins
+   - Only broadcast small tables (<100MB recommended)
+   - Use broadcast hint selectively: df1.join(broadcast(df2), "key")
+   - Monitor broadcast table sizes
+
+4. Handle Data Skew
+   - Implement salting for skewed keys: withColumn("salt", rand())
+   - Use repartition for better distribution: repartition(100, "key")
+   - Balance data across partitions evenly
+
+5. Optimize Transformations
+   - Use selectExpr() instead of complex UDFs
+   - Filter data early in the transformation chain
+   - Avoid cartesian joins and expensive operations
+   - Use efficient data formats (Parquet/ORC)
+
+6. Monitoring and Debugging
+   - Enable Spark UI for memory monitoring
+   - Use .explain() to analyze query plans
+   - Check executor vs driver memory usage
+   - Implement incremental processing for large datasets
+
+KEY PRINCIPLE:
+Keep data distributed across executors. Driver should only coordinate work,
+not process data. Design transformations to minimize data movement to driver.
+
+PREVENTION STRATEGIES:
+- Test with sample data first
+- Monitor job metrics during development
+- Use appropriate partitioning strategies
+- Implement checkpointing for long workflows
+- Choose right instance types based on workload
