@@ -1,6 +1,12 @@
-langchain>=0.1.0
-langchain-core>=0.1.0
-langchain-text-splitters>=0.0.1
+# LangChain version pinned to compatible one (supports text_splitter)
+langchain==0.0.335
+
+# Core and text-splitter packages not needed for 0.0.335 version
+# (these only apply for new 0.1.x+ structure)
+# langchain-core
+# langchain-text-splitters
+
+# Other dependencies
 tiktoken
 pydantic
 requests
