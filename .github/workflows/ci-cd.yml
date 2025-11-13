@@ -33,6 +33,7 @@ jobs:
       - name: Run pytest
         run: |
           pip install pytest
+          python -m pip install -e .
           pytest tests/ --maxfail=1 --disable-warnings -q
 
       - name: Build RCA package
