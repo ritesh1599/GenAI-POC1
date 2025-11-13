@@ -1,5 +1,12 @@
-boto3
 tiktoken
 pydantic
-python-dotenv
 requests
+faiss-cpu
+numpy
+sentence-transformers
+langchain>=0.1.0
+boto3
+python-dotenv
+openai
+google-generativeai
+pytest
